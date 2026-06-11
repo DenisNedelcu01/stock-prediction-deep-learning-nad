@@ -1,52 +1,59 @@
 import os
-import sys
-import warnings
-
-# Eliminare avertismente OpenSSL/urllib3 de pe macOS pentru o consolă curată
-warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
-warnings.filterwarnings("ignore", message=".*OpenSSL.*")
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-sys.stdout.reconfigure(line_buffering=True)
-
 import pandas as pd
 import numpy as np
+import warnings
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 
-# Configurare Active (Modifică aici numele fișierului pentru celelalte companii)
+warnings.filterwarnings("ignore")
+
+# 1. Asset and Data Configuration
 file_name = 'NVDA_data.csv'
 model_name = 'model_nvda_lstm.h5'
 
-# REPARARE FILE_NOT_FOUND: Determinăm folderul rădăcină al proiectului în mod dinamic
-script_dir = os.path.dirname(os.path.abspath(__file__)) # Calea către folderul 'scripts'
-project_root = os.path.dirname(script_dir)             # Urcăm un nivel în rădăcina proiectului
-
-data_path = os.path.join(project_root, 'data', file_name)
-df = pd.read_csv(data_path, index_col=0)
-print(f"--- [OK] Date încărcate cu succes din: {data_path} ---", flush=True)
-
-# Selectăm exact cele 6 coloane obligatorii pentru antrenare
-feature_cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'Average']
-data = df[feature_cols].values
-
-scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_data = scaler.fit_transform(data)
-
-X, y = [], []
+# Define strict calendar boundaries for the training phase
+train_start_date = '2014-01-01'
+train_end_date = '2022-12-31'
 window_size = 60
 
+# Resolve absolute path setup dynamically
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir) if "scripts" in script_dir else script_dir
+
+# Load dataset
+data_path = os.path.join(project_root, 'data', file_name)
+df = pd.read_csv(data_path, index_col=0)
+df.index = pd.to_datetime(df.index)
+print(f"Dataset successfully loaded from: {data_path}", flush=True)
+
+# Feature extraction and normalization
+feature_cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'Average']
+matrix_data = df[feature_cols].values
+
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_data = scaler.fit_transform(matrix_data)
+
+# Reconstruct data structure using sliding lookback windows
+X, y = [], []
 for i in range(window_size, len(scaled_data)):
     X.append(scaled_data[i - window_size:i])
-    y.append(scaled_data[i, 5])  # Indexul 5 este coloana 'Average'
+    y.append(scaled_data[i, 5])  # Index 5 maps directly to the 'Average' target column
 
 X, y = np.array(X), np.array(y)
 
-train_size = int(len(X) * 0.8)
-X_train, X_test = X[:train_size], X[train_size:]
-y_train, y_test = y[:train_size], y[train_size:]
+# Isolate the precise slice of time matching the sliding window index matrix
+dates_for_X = df.index[window_size:]
 
+# Separate training and testing sets using target date boundaries
+train_mask = (dates_for_X >= train_start_date) & (dates_for_X <= train_end_date)
+X_train, y_train = X[train_mask], y[train_mask]
+X_test, y_test = X[~train_mask], y[~train_mask]
+
+print(f"Training structural span: {train_start_date} -> {train_end_date} ({len(X_train)} samples)")
+print(f"Testing structural span: Remaining validation horizon ({len(X_test)} samples)", flush=True)
+
+# 2. Build and Train the Recurrent Neural Network
 model = Sequential([
     LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])),
     Dropout(0.2),
@@ -56,12 +63,13 @@ model = Sequential([
 ])
 
 model.compile(optimizer='adam', loss='mean_squared_error')
-print(f"\n--- Pornire Antrenare LSTM pentru {file_name} ---", flush=True)
+print(f"\nInitializing optimized GRU training process for {file_name}...", flush=True)
 model.fit(X_train, y_train, epochs=25, batch_size=32, validation_data=(X_test, y_test), verbose=1)
 
-# Salvare model folosind calea absolută către folderul 'models'
+# Export weights directly to the models directory
 models_dir = os.path.join(project_root, 'models')
 os.makedirs(models_dir, exist_ok=True)
 model_path = os.path.join(models_dir, model_name)
+
 model.save(model_path)
-print(f"[SUCCES] Model salvat în mod absolut: {model_path}", flush=True)
+print(f"Model successfully saved to absolute path: {model_path}", flush=True)
