@@ -70,9 +70,6 @@ y_all_pred[:] = np.nan
 y_all_pred[split_idx:] = inv_predictions
 
 # ==============================================================================
-# OPTIONAL ARCHITECTURAL LOGIC: RECONSTRUCTING TRAIN PREDICTIONS
-# UNCOMMENT THE BLOCK BELOW IF YOU NEED TO SHOW THE RED LINE FOR THE TRAIN PHASE
-# ==============================================================================
 # X_train_full = []
 # for i in range(window_size, split_idx):
 #     X_train_full.append(scaled_data[i - window_size:i])
