@@ -46,5 +46,5 @@ output_filename = f"{ticker}_data.csv"
 output_path = os.path.join(data_dir, output_filename)
 df.to_csv(output_path)
 
-print(f"\n✨ Success! Dataset saved directly to: {output_path}")
+print(f"\nSuccess! Dataset saved directly to: {output_path}")
 print(df[['Open', 'Close', 'Volume', 'Average']].head())
