@@ -25,5 +25,6 @@ To evaluate their performance across varying levels of volatility, the pipeline 
 │   ├── train_gru.py       # Stacked GRU model training pipeline
 │   ├── train_lstm.py      # Stacked LSTM model training pipeline
 │   └── test_and_plot.py   # Out-of-sample inference, error evaluation & plotting
+├── Disertatie_NAD.docx    # Documentation of the project
 ├── requirements.txt       # Environment software dependencies log
 └── README.md              # Project documentation repository index
