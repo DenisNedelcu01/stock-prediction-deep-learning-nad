@@ -21,10 +21,11 @@ To evaluate their performance across varying levels of volatility, the pipeline 
 ├── data/           # Stored historical asset datasets (.csv files)
 ├── models/         # Serialized, pre-trained neural network weights (.h5 files)
 ├── scripts/        # Core execution engines
+├── prediction_photos/ # Contains the photos for each stock graph
 │   ├── download_data.py   # Ingestion layer via Yahoo Finance API
 │   ├── train_gru.py       # Stacked GRU model training pipeline
 │   ├── train_lstm.py      # Stacked LSTM model training pipeline
 │   └── test_and_plot.py   # Out-of-sample inference, error evaluation & plotting
-├── Disertatie_NAD.docx    # Documentation of the project
+├── documentation.docx    # Documentation of the project
 ├── requirements.txt       # Environment software dependencies log
 └── README.md              # Project documentation repository index
